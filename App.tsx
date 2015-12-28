@@ -3,23 +3,22 @@ eval(namespaceEvalHack("Todos"));
 /* tslint:enable:no-eval */
 
 namespace Todos {
-  export interface TaskDAO {
-    _id: number;
-    text: string;
+  // App component - represents the whole App
+  interface AppData {
+    tasks: TaskDAO[];
   }
 
-  // App component - represents the whole App
-  export class App extends React.Component<{}, {}> {
-    private getTasks(): TaskDAO[] {
-      return [
-        { _id: 1, text: "This is task 1" },
-        { _id: 2, text: "This is task 2" },
-        { _id: 3, text: "This is task 3" }
-      ];
+  @reactMixin.decorate(ReactMeteorData)
+  export class App extends MeteorComponent<{}, {}, AppData> {
+    public getMeteorData(): AppData {
+      return {
+        tasks: Tasks.find({}).fetch()
+      };
     }
 
     private renderTasks(): JSX.Element[] {
-      return this.getTasks().map((task) => {
+      // Get tasks from this.data.tasks
+      return this.data.tasks.map((task) => {
         return <Task key={task._id} task={task} />;
       });
     }

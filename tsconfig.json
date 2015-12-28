@@ -21,7 +21,10 @@
     "buildOnSave": true,
     "files": [
         "lib/loadFirst/namespaceEvalHack.ts",
+        "lib/MeteorComponent.ts",
         "typings/package_defs.d.ts",
+        "typings/react-meteor-data/react-meteor-data.d.ts",
+        "typings/react-mixin/react-mixin.d.ts",
         "typings/react/react-addons-create-fragment.d.ts",
         "typings/react/react-addons-css-transition-group.d.ts",
         "typings/react/react-addons-linked-state-mixin.d.ts",
