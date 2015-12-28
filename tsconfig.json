@@ -1,0 +1,44 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "jsx": "preserve",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "noImplicitAny": true
+    },
+    "formatCodeOptions": {
+        "indentSize": 2,
+        "tabSize": 2,
+        "newLineCharacter": "\n"
+    },
+    "filesGlob": [
+        "**/*.ts",
+        "**/*.tsx",
+        "!node_modules/**",
+        "!typings/package_defs/**"
+    ],
+    "compileOnSave": true,
+    "buildOnSave": true,
+    "files": [
+        "lib/loadFirst/namespaceEvalHack.ts",
+        "typings/package_defs.d.ts",
+        "typings/react/react-addons-create-fragment.d.ts",
+        "typings/react/react-addons-css-transition-group.d.ts",
+        "typings/react/react-addons-linked-state-mixin.d.ts",
+        "typings/react/react-addons-perf.d.ts",
+        "typings/react/react-addons-pure-render-mixin.d.ts",
+        "typings/react/react-addons-test-utils.d.ts",
+        "typings/react/react-addons-transition-group.d.ts",
+        "typings/react/react-addons-update.d.ts",
+        "typings/react/react-dom.d.ts",
+        "typings/react/react-global.d.ts",
+        "typings/react/react.d.ts",
+        "typings/tsd.d.ts",
+        "App.tsx",
+        "simple-todos-react-typescript.tsx",
+        "Task.tsx"
+    ],
+    "atom": {
+        "rewriteTsconfig": true
+    }
+}
