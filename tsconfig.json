@@ -37,6 +37,7 @@
         "typings/react/react-global.d.ts",
         "typings/react/react.d.ts",
         "typings/tsd.d.ts",
+        "AccountsUiWrapper.tsx",
         "App.tsx",
         "simple-todos-react-typescript.tsx",
         "Task.tsx"

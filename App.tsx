@@ -11,6 +11,7 @@ namespace Todos {
   interface AppData {
     tasks: TaskDAO[];
     incompleteCount: number;
+    currentUser: Meteor.User;
   }
 
   @reactMixin.decorate(ReactMeteorData)
@@ -28,7 +29,8 @@ namespace Todos {
       }
       return {
         tasks: Tasks.find(query, { sort: { createdAt: -1 } }).fetch(),
-        incompleteCount: Tasks.find({ checked: { $ne: true } }).count()
+        incompleteCount: Tasks.find({ checked: { $ne: true } }).count(),
+        currentUser: Meteor.user()
       };
     }
 
@@ -49,7 +51,9 @@ namespace Todos {
       Tasks.insert({
         text: text,
         createdAt: new Date(), // current time
-        checked: false
+        checked: false,
+        owner: Meteor.userId(),
+        username: Meteor.user().username
       });
 
       // Clear form
@@ -75,12 +79,15 @@ namespace Todos {
                   onClick={this.toggleHideCompleted.bind(this)} />
               Hide Completed Tasks
             </label>
-            <form className="new-task" onSubmit={this.handleSubmit.bind(this)} >
-              <input
-                  type="text"
-                  ref="textInput"
-                  placeholder="Type to add new tasks" />
-            </form>
+            <AccountsUiWrapper />
+            { this.data.currentUser ?
+              <form className="new-task" onSubmit={this.handleSubmit.bind(this)} >
+                <input
+                    type="text"
+                    ref="textInput"
+                    placeholder="Type to add new tasks" />
+              </form> : ""
+            }
           </header>
           <ul>
             {this.renderTasks()}
