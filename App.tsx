@@ -48,13 +48,7 @@ namespace Todos {
       const inputElement = this.refs["textInput"] as HTMLInputElement;
       const text = inputElement.value.trim();
 
-      Tasks.insert({
-        text: text,
-        createdAt: new Date(), // current time
-        checked: false,
-        owner: Meteor.userId(),
-        username: Meteor.user().username
-      });
+      Meteor.call("addTask", text);
 
       // Clear form
       inputElement.value = "";

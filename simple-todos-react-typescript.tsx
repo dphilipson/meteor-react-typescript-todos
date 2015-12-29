@@ -4,7 +4,7 @@ eval(namespaceEvalHack("Todos"));
 
 namespace Todos {
   export interface TaskDAO {
-    _id?: number;
+    _id?: string;
     text: string;
     createdAt: Date;
     checked: boolean;
@@ -24,4 +24,29 @@ namespace Todos {
       ReactDOM.render(<App />, document.getElementById("render-target"));
     });
   }
+
+  Meteor.methods({
+    addTask(text: string) {
+      // Make sure the user is logged in before inserting a task
+      if (!Meteor.userId()) {
+        throw new Meteor.Error("not-authorized");
+      }
+
+      Tasks.insert({
+        text: text,
+        createdAt: new Date(),
+        checked: false,
+        owner: Meteor.userId(),
+        username: Meteor.user().username
+      });
+    },
+
+    removeTask(taskId: string) {
+      Tasks.remove(taskId);
+    },
+
+    setChecked(taskId: string, setChecked: boolean) {
+      Tasks.update(taskId, { $set: { checked: setChecked } });
+    }
+  });
 }

@@ -11,13 +11,12 @@ namespace Todos {
   export class Task extends React.Component<TaskProps, {}> {
     private toggleChecked(): void {
       // Set the checked property to the opposite of its current value
-      Tasks.update(this.props.task._id, {
-        $set: { checked: !this.props.task.checked }
-      });
+      Meteor.call("setChecked", this.props.task._id, ! this.props.task.checked);
+
     }
 
     private deleteThisTask() {
-      Tasks.remove(this.props.task._id);
+      Meteor.call("removeTask", this.props.task._id);
     }
 
     public render(): JSX.Element {
