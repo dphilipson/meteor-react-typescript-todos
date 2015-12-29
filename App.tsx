@@ -32,7 +32,8 @@ namespace Todos {
 
       Tasks.insert({
         text: text,
-        createdAt: new Date() // current time
+        createdAt: new Date(), // current time
+        checked: false
       });
 
       // Clear form

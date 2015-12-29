@@ -7,6 +7,7 @@ namespace Todos {
     _id?: number;
     text: string;
     createdAt: Date;
+    checked: boolean;
   }
 
   export const Tasks = new Mongo.Collection<TaskDAO>("tasks");
