@@ -12,7 +12,7 @@ namespace Todos {
   export class App extends MeteorComponent<{}, {}, AppData> {
     public getMeteorData(): AppData {
       return {
-        tasks: Tasks.find({}).fetch()
+        tasks: Tasks.find({}, { sort: { createdAt: -1 } }).fetch()
       };
     }
 
@@ -23,13 +23,34 @@ namespace Todos {
       });
     }
 
+    private handleSubmit(event: React.FormEvent): void {
+      event.preventDefault();
+
+      // Find the text field via the React ref
+      const inputElement = this.refs["textInput"] as HTMLInputElement;
+      const text = inputElement.value.trim();
+
+      Tasks.insert({
+        text: text,
+        createdAt: new Date() // current time
+      });
+
+      // Clear form
+      inputElement.value = "";
+    }
+
     public render(): JSX.Element {
       return (
         <div className="container">
           <header>
             <h1>Todo List</h1>
+            <form className="new-task" onSubmit={this.handleSubmit.bind(this)} >
+              <input
+                  type="text"
+                  ref="textInput"
+                  placeholder="Type to add new tasks" />
+            </form>
           </header>
-
           <ul>
             {this.renderTasks()}
           </ul>

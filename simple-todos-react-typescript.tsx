@@ -4,8 +4,9 @@ eval(namespaceEvalHack("Todos"));
 
 namespace Todos {
   export interface TaskDAO {
-    _id: number;
+    _id?: number;
     text: string;
+    createdAt: Date;
   }
 
   export const Tasks = new Mongo.Collection<TaskDAO>("tasks");
