@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Meteor-React-TypeScript Todos : A conversion of the Meteor-React sample app to use TypeScript">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Meteor-React-TypeScript Todos</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/dphilipson/meteor-react-typescript-todos">View on GitHub</a>
+
+          <h1 id="project_title">Meteor-React-TypeScript Todos</h1>
+          <h2 id="project_tagline">A conversion of the Meteor-React sample app to use TypeScript</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/dphilipson/meteor-react-typescript-todos/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/dphilipson/meteor-react-typescript-todos/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
+<a id="so-you-want-to-use-meteor-react-and-typescript" class="anchor" href="#so-you-want-to-use-meteor-react-and-typescript" aria-hidden="true"><span class="octicon octicon-link"></span></a>So you want to use Meteor, React, and TypeScript</h3>
+
+<p>Great choice! These are all fine technologies. Who wouldn't want to combine the end-to-end clarity of Meteor, the clear data flow of React, and the safety and comfort of TypeScript. You might be thinking this will be easy. After all, the official Meteor page has a <a href="https://www.meteor.com/tutorials/react/creating-an-app">tutorial for combining Meteor and React</a> and there are established packages on Atmosphere for combining Meteor and TypeScript such as the meteortypescript <a href="https://atmospherejs.com/meteortypescript/compiler">compiler</a> and <a href="https://atmospherejs.com/meteortypescript/typescript-libs">typescript-libs</a> packages, so it looks like the work has already been done for us. Alas, in programming nothing is ever this easy, and there are quite a few obstacles to overcome along the way.</p>
+
+<p>A list of the problems we will need to solve:</p>
+
+<ul>
+<li>We need a way to compile our .ts and .tsx files</li>
+<li>We need type definitions for React and Meteor</li>
+<li>Ideally, we want to use TypeScript namespaces to organize our code</li>
+<li>We need a way to use the react-data-mixin with ES6-style React components</li>
+<li>We need to reconcile the react-data-mixin with TypeScript typing</li>
+</ul>
+
+<p>Each of these problems has subtleties that require a bit of thought and experimentation to solve. Below are the solutions I came up with, the result of which can be seen at the linked GitHub project.</p>
+
+<h3>
+<a id="compiling-ts-and-tsx-files" class="anchor" href="#compiling-ts-and-tsx-files" aria-hidden="true"><span class="octicon octicon-link"></span></a>Compiling .ts and .tsx files</h3>
+
+<p>I expected this step to be easy because the <a href="https://atmospherejs.com/meteortypescript/compiler">meteortypescript:compiler</a> Meteor package seems like it solves this precise problem. However, meteortypescript:compiler seems only designed to convert .ts files. No matter what I tried, I could get it to correctly handle .tsx files: it would always leave the JSX elements in the compiled .js code. The documentation claims that compiler options can be given in a <code>.tsconfig</code> file at your project root, but even when I added the option <code>"jsx": "react"</code> it still incorrectly left JSX in .js files.</p>
+
+<p>Sadly, this means finding our own means to compile the TypeScript files. I decided to use the <a href="https://atom.io/">Atom</a> text editor with the <a href="https://atom.io/packages/atom-typescript">atom-typescript</a> package, although I expect these steps will be similar with any other TypeScript IDE. I used atom-typescript to generate a <code>tsconfig.json</code> file (on a Mac, that's Cmd+Shift+P, then "Create Tsconfig.json Project File") and set the following options:</p>
+
+<pre><code>{
+    "compilerOptions": {
+        "target": "es6",
+        "jsx": "preserve",
+        "experimentalDecorators": true,
+        ...
+    },
+    ...
+    "compileOnSave": true,
+    "buildOnSave": true,
+    ...
+}
+</code></pre>
+
+<p>Now whenever we save a .ts or a .tsx file, a corresponding .js or .jsx file is automatically generated in the same directory. This does clutter up our directories somewhat, but it has benefits as well:</p>
+
+<ul>
+<li>The TypeScript step of the build process is completely transparent, as we can see exactly what is being fed into Meteor and examine it if we choose to do so</li>
+<li>
+<p>The <code>filesGlob</code> option in the generated <code>tsconfig.json</code> automatically finds definitions for us. This eliminates the need to add reference declarations at the top of all our files, e.g.</p>
+
+<pre><code>/// &lt;reference path="./typings/react/react.d.ts" /&gt;
+</code></pre>
+</li>
+<li><p>Since our IDE is responsible for building, we don't run into situations where the IDE insists things are correct while the build system fails or vice versa</p></li>
+</ul>
+
+<p>The added .js and .jsx files are kind of annoying though, so let's see if we can hide them a bit. The first thing to do is have Git ignore them, since we don't want compiled files being committed. I create a <code>.gitignore</code> in my project root directory containing</p>
+
+<pre><code>**/*.js
+**/*.jsx
+</code></pre>
+
+<p>Assuming I have already run <code>git init</code>, Atom will now grey out all the gitignored .js and .jsx files in its tree view. Atom also has an option to hide gitignored files entirely, but as a personal preference I prefer to be able to see them so I can poke around in them if need be.</p>
+
+<h3>
+<a id="type-definitions-for-react-and-meteor" class="anchor" href="#type-definitions-for-react-and-meteor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Type definitions for React and Meteor</h3>
+
+<p>Type definitions for React are easy. I have the <a href="https://github.com/DefinitelyTyped/tsd">TSD definition manager</a> installed, so from the project root I type</p>
+
+<pre><code>tsd install react --save
+tsd install react-global --save
+</code></pre>
+
+<p>If you don't use TSD, you can just as easily fetch the definitions from <a href="https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/react">DefinitelyTyped</a>.</p>
+
+<p>Now for the Meteor definitions. We could simply get these from TSD/DefinitelyTyped as well, and this is a fine solution. However, I decided to get these from the <a href="https://atmospherejs.com/meteortypescript/typescript-libs">meteortypescript:typescript-libs</a> Meteor package. This has the advantage that the definitions will update automatically with <code>meteor update</code>, and it also comes with a handful of other definition files for common Meteor specific libraries that don't appear on DefinitelyTyped, such as <a href="https://atmospherejs.com/iron/router">iron:router</a>. It does take a little bit more work, so I will totally understand if you decide not to do it. But for those who want to try, we run</p>
+
+<pre><code>meteor add meteortypescript:typescript-libs
+</code></pre>
+
+<p>and as suggested in the documentation (after running the project) add a symbolic link to the definitions deep within the <code>.meteor</code> directory:</p>
+
+<pre><code>ln -s ../.meteor/local/build/programs/server/assets/packages/meteortypescript_typescript-libs/definitions typings/package_defs
+</code></pre>
+
+<p>However, this isn't perfect because it adds a bunch of definitions to libraries we may not be using or even have installed, like D3. Much more annoyingly, it contains a <code>lib.d.ts</code> file which contains the base JavaScript definitions which for some reason conflicts with TypeScript's built in definitions, causing build errors in our IDE. To solve both these problems, we'll make sure that the <code>typings/package_defs</code> directory is not compiled with the project by excluding it in <code>tsconfig.json</code>:</p>
+
+<pre><code>...
+"filesGlob": [
+    "**/*.ts",
+    "**/*.tsx",
+    "!node_modules/**",
+    "!typings/package_defs/**"
+],
+...
+</code></pre>
+
+<p>Then to actually get the specific definitions we want from <code>typings/package_defs</code>, create a new definition file which explicitly references the desired files. I created a new file <code>typings/package_defs.d.ts</code> which for now just contains</p>
+
+<pre><code>/// &lt;reference path="./package_defs/meteor.d.ts" /&gt;
+</code></pre>
+
+<p>Done! Try typing some React or Meteor expressions into a .ts or .tsx file now and hopefully get autocompletion and type information.</p>
+
+<h3>
+<a id="using-typescript-namespaces" class="anchor" href="#using-typescript-namespaces" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using TypeScript namespaces</h3>
+
+<p>This step is optional and the solution is quite disgusting. You might decide you don't intend to use the namespace feature of TypeScript at all, in which case you can ignore this step and happily spew symbols into the global scope. But I happen to like namespaces a lot. Some advantages:</p>
+
+<ul>
+<li>Exporting a single symbol into the global scope greatly reduces the possibility of naming conflicts with other libraries or future built-in functions</li>
+<li>It is particularly useful when debugging because I can access all app specific names through the single global variable rather than autocompleting from the large pool of global names</li>
+<li>It helps organize code by allowing simpler names in a given part of the code. For example, if I am in the namespace <code>Todos.Task</code>, I can declare a class named <code>State</code> representing the state of a Task and not worry about using up such a clear and generic name</li>
+</ul>
+
+<p>So what makes namespaces hard to use with Meteor? We'll need to look into the implementation details of namespaces a bit. The TypeScript code</p>
+
+<pre><code>namespace Space {
+    export const x = 2;
+}
+</code></pre>
+
+<p>compiles to the JavaScript</p>
+
+<pre><code>var Space;
+(function (Space) {
+    Space.x = 2;
+})(Space || (Space = {}));
+</code></pre>
+
+<p>Neat right? It grabs an existing object with the namespace name out of global scope, and then exported variables are read from and written to that object. Unfortunately, in an effort to be helpful, Meteor wraps the contents of each file in an <a href="https://en.wikipedia.org/wiki/Immediately-invoked_function_expression">IIFE</a>, meaning what gets emitted actually looks like this</p>
+
+<pre><code>(function () {
+    var Space;
+    (function (Space) {
+        Space.x = 2;
+    })(Space || (Space = {}));
+})();
+</code></pre>
+
+<p>This ruins everything, because now the <code>var Space</code> no longer references the global variable <code>Space</code> but instead declares a new one inside the scope of the newly added anonymous function. Since each reference to the namespace therefore refers to an entirely different object, the whole system comes crashing down.</p>
+
+<p>Unfortunately, I cannot come up with a clean solution to this problem, so I eventually settled on the solution proposed by Dr. Llama in the post <a href="https://doctorllama.wordpress.com/2015/04/21/meteor-typescript-classes-and-modules/">Meteor Typescript - Classes and Modules</a> (in the linked post, Dr. Llama talks about "modules" instead of "namespaces", but they are the same concept). That is, we use <code>eval</code> to insert a line to make the variable refer to the global reference, e.g.</p>
+
+<pre><code>eval("var Space = this.Space || (this.Space = {})");
+
+namespace Space {
+    ...
+}
+</code></pre>
+
+<p>Since I'll be doing this a lot, I'll factor out that string into a helper function declared in a separate file that we make sure is loaded first:</p>
+
+<pre><code>declare var namespaceEvalHack: (namespace: string) =&gt; string;
+
+namespaceEvalHack = function namespaceEvalHack(namespace: string) {
+    return `var ${namespace} = this.${namespace} || (this.${namespace} = {})`;
+}
+</code></pre>
+
+<p>and then whenever we use namespaces we can write</p>
+
+<pre><code>eval(namespaceEvalHack("Space"));
+
+namespace Space {
+    ...
+}
+</code></pre>
+
+<p>Whew. It's pretty ugly, but it works and now we can use namespaces to our hearts' content.</p>
+
+<h3>
+<a id="using-reactdatamixin-with-es6-components" class="anchor" href="#using-reactdatamixin-with-es6-components" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using ReactDataMixin with ES6 Components</h3>
+
+<p>The <a href="https://atmospherejs.com/meteor/react">Meteor react package</a> provides a mixin called <code>ReactDataMixin</code> to allow the creation of React components that are reactive in the Meteor sense (i.e. update when collections update, etc.). Unfortunately, React mixins are not supported to be used with <a href="https://facebook.github.io/react/docs/reusable-components.html#es6-classes">ES6 style of component declaration</a>, which is the way supported by TypeScript. To reconcile the two, we need the help of a third-party library, <a href="https://github.com/brigand/react-mixin">react-mixin</a>, which allows React mixins to be used with ES6 classes. react-mixin comes in two versions, one from npm and one as a standalone library that exports the global symbol <code>reactMixin</code>. We will choose the second once, since incorporating our app with <code>npm</code> is a challenge for another day (if your curious, it can be done with Meteor's <a href="https://atmospherejs.com/cosmos/browserify">cosmos:browserify</a> package). I save the standalone lib to <code>lib/thirdParty/react-mixin.js</code>.</p>
+
+<p>But wait, didn't we tell Git to ignore all .js files in the project? That's inconvenient. To get around this, we'll add an exception for the specific directory we decide to use for third-party libs, by adding a line to our <code>.gitignore</code> so it appears</p>
+
+<pre><code>**/*.js
+**/*.jsx
+!lib/thirdParty/**
+</code></pre>
+
+<p>Assuming you set <code>"experimentalDecorators": true</code> in your <code>tsconfig.json</code> as suggested above, we can now mix <code>ReactDataMixin</code> with our ES6 classes as follows:</p>
+
+<pre><code>@reactMixin.decorate(ReactDataMixin)
+class SomeComponent extends React.Component&lt;{}, {}&gt; {
+    ...
+}
+</code></pre>
+
+<p>Or if you don't want to use decorators, you can do it instead with</p>
+
+<pre><code>class SomeComponent extends React.Component&lt;{}, {}&gt; {
+    ...
+}
+
+reactMixin.onClass(SomeComponent, ReactDataMixin);
+</code></pre>
+
+<p>Of course, if you do this right now, TypeScript will start complaining everywhere. The typing story here is a little complicated, so let's jump into it!</p>
+
+<h3>
+<a id="typings-for-reactdatamixin" class="anchor" href="#typings-for-reactdatamixin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Typings for ReactDataMixin</h3>
+
+<p>Neither <code>ReactDataMixin</code> nor <code>reactMixin</code> seem to have existing type definitions. Luckily, both are simple enough that we can write the definitions ourselves without too much trouble.</p>
+
+<p>First things first: let's get a definition for <code>ReactDataMixin</code>. In a definition file somewhere (I used <code>typings/react-data-mixin/react-data-mixin.d.ts</code>), write</p>
+
+<pre><code>declare const ReactDataMixin: any;
+</code></pre>
+
+<p>Alright, that was easy! How about <code>reactMixin</code>?</p>
+
+<pre><code>declare interface ReactMixin {
+    (componentPrototype: React.Component&lt;any, any&gt;, mixin: any): void;
+    onClass: (componentClass: React.ComponentClass&lt;any&gt;, mixin: any) =&gt; void;
+    decorate: (mixin: any) =&gt; ClassDecorator;
+}
+
+declare const reactMixin: ReactMixin;
+</code></pre>
+
+<p>Woo! Are we done? Not quite. When <code>ReactDataMixin</code> is added to a component, it adds a new field <code>data</code> to the host component and expects us to implement a new method <code>getMeteorData()</code> which reads the data from some reactive data source. Since we can't add a new field to a component with definitions alone, we will actually create a new Component superclass for this, parameterized on the type of <code>data</code> as well as on the types of props and state:</p>
+
+<pre><code>class MeteorComponent&lt;P, S, D&gt; extends React.Component&lt;P, S&gt; {
+    public data: D;
+
+    public getMeteorData(): D {
+        throw new Error("MeteorComponent subclass must implement getMeteorData()");
+    }
+}
+</code></pre>
+
+<p>Now we can declare components which depend on Meteor reactive sources by subclassing this</p>
+
+<pre><code>@reactMixin.decorate(ReactDataMixin)
+class App extends MeteorComponent&lt;AppProps, AppState, AppData&gt; {
+    public getMeteorData(): AppData {
+        ...
+    }
+
+    ...
+}
+</code></pre>
+
+<p>And we're done! That was the last hurdle, so now we can finally develop in peace.</p>
+
+<h3>
+<a id="other-gotchas" class="anchor" href="#other-gotchas" aria-hidden="true"><span class="octicon octicon-link"></span></a>Other gotchas</h3>
+
+<p>There are a few other stumbling blocks I ran into while working on this which are too small to discuss at length but are still worth mentioning.</p>
+
+<ul>
+<li>If you choose not to use namespaces, then certain type names you use may collide with third-party definitions. For example, if you naively follow the <a href="https://www.meteor.com/tutorials/react/creating-an-app">Meteor-React tutorial</a> and use TypeScript without namespaces, then you will run into a baffling error when your class <code>App</code> conflicts with the type <code>App</code> declared in <code>meteor.d.ts</code>. You can avoid this problem by renaming the class to something else (say <code>MyApp</code>) or by using namespaces.</li>
+<li>Certain Meteor API's bind some special value to <code>this</code>. For example, following the tutorial the Accounts package expects you use <code>this.userId</code> to get the current userId in a publication function argument. When writing such a function, make sure not to use ES6 arrow functions but instead to write out the full <code>function () { ... }</code>, since arrow functions capture the current value of <code>this</code>.</li>
+<li>Adding types for Meteor and React code is not too bad after everything we've been through above, but if you ever get stuck, look through the <a href="https://github.com/dphilipson/meteor-react-typescript-todos">linked GitHub repo</a> for sample code.</li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Meteor-React-TypeScript Todos maintained by <a href="https://github.com/dphilipson">dphilipson</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
